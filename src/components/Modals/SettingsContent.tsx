@@ -133,12 +133,12 @@ function SettingsContent() {
                       )}
                     </div>
                     <div>
-                      <span className="toggle-title">{isDark ? "Dark Theme" : "Light Theme"}</span>
-                      <span className="toggle-desc">{isDark ? "Default appearance" : "Bright appearance"}</span>
+                      <span className="toggle-title">Dark Theme</span>
+                      <span className="toggle-desc">{isDark ? "Dark appearance active" : "Bright appearance active"}</span>
                     </div>
                   </div>
                   <label className="toggle-switch">
-                    <input type="checkbox" checked={!isDark} onChange={toggleTheme} />
+                    <input type="checkbox" checked={isDark} onChange={toggleTheme} />
                     <span className="toggle-slider" />
                   </label>
                 </div>
