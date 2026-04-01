@@ -1,7 +1,6 @@
 "use client";
 
 import { useGlobalState } from "@/context/globalProvider";
-import axios from "axios";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../Button/Button";
@@ -56,15 +55,22 @@ function CreateContent() {
     };
 
     try {
-      const res = await axios.post("api/tasks", task);
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(task),
+      });
 
-      if (!res.data.error) {
-        toast.success("Task created successfully !");
+      if (res.ok) {
+        toast.success("Task created successfully!");
         allTasks();
         closeModal();
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed");
       }
-    } catch (error) {
-      toast.error("Something went wrong !");
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong!");
       console.log(error);
     }
     // console.log(title, description, date, completed, important);
