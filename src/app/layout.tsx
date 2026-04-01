@@ -8,6 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import NextTopLoader from "nextjs-toploader";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   weight: ["300", "400", "500", "600", "700", "800"],
@@ -30,6 +31,7 @@ export default async function RootLayout({
   return (
     <ClerkProvider>
       <SpeedInsights />
+      <Analytics />
       <html lang="en" className={inter.className}>
         <body>
           <NextTopLoader
