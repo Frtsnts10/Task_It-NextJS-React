@@ -77,6 +77,14 @@ select {
   background: transparent;
 }
 
+/* Suppress native browser focus ring on click for ALL buttons */
+button:focus,
+button:focus-visible,
+button:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 button svg,
 button span {
   pointer-events: none;

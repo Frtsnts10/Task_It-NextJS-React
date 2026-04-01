@@ -1,8 +1,8 @@
 "use client";
 import { useGlobalState } from "@/context/globalProvider";
-
 import React from "react";
 import styled from "styled-components";
+import { motion } from "framer-motion";
 
 interface Props {
   icon?: React.ReactNode;
@@ -35,6 +35,7 @@ function Button({
 
   return (
     <ButtonStyled
+      as={motion.button}
       type={type}
       style={{
         background: background,
@@ -47,6 +48,9 @@ function Button({
       }}
       theme={theme}
       onClick={click}
+      whileTap={{ scale: 0.93 }}
+      whileHover={{ scale: 1.03 }}
+      transition={{ type: "spring", stiffness: 400, damping: 20 }}
     >
       {icon && icon}
       {name}
@@ -54,22 +58,22 @@ function Button({
   );
 }
 
-const ButtonStyled = styled.button`
-  display: grid;
-  
+const ButtonStyled = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   cursor: pointer;
-
+  outline: none !important;
+  box-shadow: none;
   color: ${(props) => props.theme.colorGrey2};
-
-  transition: all 0.55s ease-in-out;
+  transition: color 0.2s ease;
 
   i {
     margin: auto;
-
     color: ${(props) => props.theme.colorGrey2};
     font-size: 1.4rem;
-    transition: all 0.55s ease-in-out;
+    transition: color 0.2s ease;
   }
 
   &:hover {
@@ -77,6 +81,12 @@ const ButtonStyled = styled.button`
     i {
       color: ${(props) => props.theme.colorGrey0};
     }
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
   }
 `;
 

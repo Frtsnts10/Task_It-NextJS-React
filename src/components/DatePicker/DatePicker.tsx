@@ -1,57 +1,177 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
-import { DayPicker } from "react-day-picker";
-import { format, parseISO, isValid } from "date-fns";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
+import {
+  format, addMonths, subMonths,
+  startOfMonth, endOfMonth,
+  startOfWeek, endOfWeek,
+  eachDayOfInterval,
+  isSameMonth, isSameDay, isBefore, startOfDay,
+} from "date-fns";
 import { useGlobalState } from "@/context/globalProvider";
 import styled from "styled-components";
-import "react-day-picker/dist/style.css";
 
 interface DatePickerProps {
-  value: string; // ISO string e.g. "2024-04-15"
+  value: string;
   onChange: (dateStr: string) => void;
   placeholder?: string;
 }
 
-export default function DatePicker({
-  value,
-  onChange,
-  placeholder = "Pick a date",
-}: DatePickerProps) {
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const POPOVER_W = 292;
+const POPOVER_H = 310; // approx height
+
+export default function DatePicker({ value, onChange, placeholder = "Pick a date" }: DatePickerProps) {
   const { theme } = useGlobalState();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [viewDate, setViewDate] = useState(new Date());
+  const [popPos, setPopPos] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const selected = value
-    ? (() => {
-        const d = parseISO(value);
-        return isValid(d) ? d : undefined;
-      })()
-    : undefined;
+  const today = startOfDay(new Date());
+  const selected = value ? startOfDay(new Date(value + "T00:00:00")) : null;
 
-  // Close on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    if (selected) setViewDate(selected);
+  }, [value]);
+
+  const calcPos = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    let top: number;
+    if (spaceBelow >= POPOVER_H + 8) {
+      // Open downward
+      top = rect.bottom + 8;
+    } else if (spaceAbove >= POPOVER_H + 8) {
+      // Open upward
+      top = rect.top - POPOVER_H - 8;
+    } else {
+      // Center vertically as fallback
+      top = Math.max(8, (window.innerHeight - POPOVER_H) / 2);
+    }
+
+    let left = rect.left;
+    if (left + POPOVER_W > window.innerWidth - 8) {
+      left = window.innerWidth - POPOVER_W - 8;
+    }
+
+    setPopPos({ top, left });
   }, []);
 
-  const handleSelect = (day: Date | undefined) => {
-    if (day) {
-      onChange(format(day, "yyyy-MM-dd"));
-      setOpen(false);
-    }
+  const handleToggle = () => {
+    calcPos();
+    setOpen((o) => !o);
   };
 
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === "Escape") setOpen(false);
+        return;
+      }
+      const target = e.target as Node;
+      const popover = document.getElementById("dp-portal-popover");
+      if (triggerRef.current?.contains(target)) return;
+      if (popover?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    window.addEventListener("resize", calcPos);
+    window.addEventListener("scroll", calcPos, true);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+      window.removeEventListener("resize", calcPos);
+      window.removeEventListener("scroll", calcPos, true);
+    };
+  }, [open, calcPos]);
+
+  const calStart = startOfWeek(startOfMonth(viewDate));
+  const calEnd = endOfWeek(endOfMonth(viewDate));
+  const days = eachDayOfInterval({ start: calStart, end: calEnd });
+
+  // Always show 6 rows (42 cells) so height never changes
+  while (days.length < 42) {
+    const last = days[days.length - 1];
+    const next = new Date(last);
+    next.setDate(last.getDate() + 1);
+    days.push(next);
+  }
+
+  const handleSelect = (day: Date) => {
+    if (isBefore(day, today)) return;
+    onChange(format(day, "yyyy-MM-dd"));
+    setOpen(false);
+  };
+
+  const popover = open ? (
+    <PortalPopover
+      id="dp-portal-popover"
+      style={{ top: popPos.top, left: popPos.left }}
+      theme={theme}
+    >
+      {/* Header */}
+      <div className="cal-header">
+        <button type="button" className="cal-nav" onClick={() => setViewDate(subMonths(viewDate, 1))}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span className="cal-title">{format(viewDate, "MMMM yyyy")}</span>
+        <button type="button" className="cal-nav" onClick={() => setViewDate(addMonths(viewDate, 1))}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Weekday labels */}
+      <div className="cal-weekdays">
+        {WEEKDAYS.map((d) => <span key={d} className="cal-weekday">{d}</span>)}
+      </div>
+
+      {/* Days grid — always 42 cells = 6 rows */}
+      <div className="cal-grid">
+        {days.map((day) => {
+          const isPast = isBefore(day, today);
+          const isSelected = selected ? isSameDay(day, selected) : false;
+          const isToday = isSameDay(day, today);
+          const isCurrentMonth = isSameMonth(day, viewDate);
+
+          return (
+            <button
+              key={day.toISOString()}
+              type="button"
+              disabled={isPast}
+              onClick={() => handleSelect(day)}
+              className={[
+                "cal-day",
+                isSelected ? "selected" : "",
+                isToday && !isSelected ? "today" : "",
+                !isCurrentMonth ? "outside" : "",
+                isPast ? "disabled" : "",
+              ].filter(Boolean).join(" ")}
+            >
+              {format(day, "d")}
+            </button>
+          );
+        })}
+      </div>
+    </PortalPopover>
+  ) : null;
+
   return (
-    <DatePickerStyled theme={theme} ref={ref}>
+    <DatePickerStyled theme={theme}>
       <button
+        ref={triggerRef}
         type="button"
         className={`dp-trigger ${open ? "open" : ""} ${selected ? "has-value" : ""}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
       >
         <span className="dp-icon">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -65,196 +185,169 @@ export default function DatePicker({
           {selected ? format(selected, "MMMM d, yyyy") : placeholder}
         </span>
         <span className="dp-chevron">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
-          >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </span>
       </button>
 
-      {open && (
-        <div className="dp-popover">
-          <DayPicker
-            mode="single"
-            selected={selected}
-            onSelect={handleSelect}
-            showOutsideDays
-            fixedWeeks
-          />
-        </div>
-      )}
+      {typeof window !== "undefined" && createPortal(popover, document.body)}
     </DatePickerStyled>
   );
 }
 
+/* ─── Trigger button styles ─────────────────────────────────────── */
 const DatePickerStyled = styled.div`
   position: relative;
   width: 100%;
 
-  /* Trigger button */
   .dp-trigger {
     width: 100%;
     display: flex;
     align-items: center;
     gap: 0.6rem;
     padding: 0.7rem 0.9rem;
-    background: ${(props) => props.theme.colorBg};
-    border: 1px solid ${(props) => props.theme.borderColor};
+    background: ${(p) => p.theme.colorBg};
+    border: 1px solid ${(p) => p.theme.borderColor};
     border-radius: 9px;
-    color: ${(props) => props.theme.colorGrey3};
+    color: ${(p) => p.theme.colorGrey3};
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: left;
 
-    .dp-icon {
+    .dp-icon, .dp-chevron {
       display: flex;
       align-items: center;
       flex-shrink: 0;
-      color: ${(props) => props.theme.colorGrey3};
+      color: ${(p) => p.theme.colorGrey3};
     }
+    .dp-label { flex: 1; }
 
-    .dp-label {
-      flex: 1;
-    }
+    &.has-value { color: ${(p) => p.theme.colorGrey0}; }
 
-    .dp-chevron {
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-      color: ${(props) => props.theme.colorGrey3};
-    }
-
-    &.has-value {
-      color: ${(props) => props.theme.colorGrey0};
-    }
-
-    &:hover,
-    &.open {
-      border-color: ${(props) => props.theme.colorPrimary};
-      box-shadow: 0 0 0 3px ${(props) => props.theme.colorPrimaryLight};
+    &:hover, &.open {
+      border-color: ${(p) => p.theme.colorPrimary};
+      box-shadow: 0 0 0 3px ${(p) => p.theme.colorPrimaryLight};
     }
   }
+`;
 
-  /* Popover */
-  .dp-popover {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    z-index: 500;
-    background: ${(props) => props.theme.colorBg2};
-    border: 1px solid ${(props) => props.theme.borderColorAccent};
-    border-radius: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-    animation: dpIn 0.18s ease forwards;
-    overflow: hidden;
+/* ─── Portal popover (rendered on document.body) ────────────────── */
+const PortalPopover = styled.div<{ theme: any }>`
+  position: fixed;
+  z-index: 99999;
+  background: ${(p) => p.theme.colorBg2};
+  border: 1px solid ${(p) => p.theme.borderColorAccent};
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45), 0 4px 16px rgba(0,0,0,0.2);
+  padding: 0.8rem;
+  width: ${POPOVER_W}px;
+  animation: dpIn 0.18s ease forwards;
 
-    @keyframes dpIn {
-      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
+  @keyframes dpIn {
+    from { opacity: 0; transform: scale(0.97) translateY(4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
   }
 
-  /* Override react-day-picker styles to match our dark theme */
-  .rdp {
-    --rdp-cell-size: 36px;
-    --rdp-accent-color: ${(props) => props.theme.colorPrimary};
-    --rdp-background-color: ${(props) => props.theme.colorPrimaryLight};
-    --rdp-accent-color-dark: ${(props) => props.theme.colorPrimary};
-    --rdp-background-color-dark: ${(props) => props.theme.colorPrimaryLight};
-    --rdp-outline: none;
-    --rdp-outline-selected: none;
-    margin: 0.5rem;
-  }
-
-  .rdp-months {
-    justify-content: center;
-  }
-
-  .rdp-month {
-    background: transparent;
-  }
-
-  .rdp-caption {
+  /* Header */
+  .cal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0.25rem 0.5rem;
+    margin-bottom: 0.6rem;
+    padding: 0 0.1rem;
   }
 
-  .rdp-caption_label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: ${(props) => props.theme.colorGrey0};
+  .cal-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: ${(p) => p.theme.colorGrey0};
+    letter-spacing: 0.01em;
   }
 
-  .rdp-nav_button {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
+  .cal-nav {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: ${(props) => props.theme.colorGrey2};
+    color: ${(p) => p.theme.colorGrey2};
+    cursor: pointer;
     transition: all 0.15s ease;
 
     &:hover {
-      background: ${(props) => props.theme.colorBg4};
-      color: ${(props) => props.theme.colorGrey0};
+      background: ${(p) => p.theme.colorBg4};
+      color: ${(p) => p.theme.colorGrey0};
     }
   }
 
-  .rdp-head_cell {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: ${(props) => props.theme.colorGrey3};
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  /* Weekdays */
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 0.25rem;
   }
 
-  .rdp-day {
-    width: 36px;
-    height: 36px;
-    font-size: 0.85rem;
-    border-radius: 8px;
-    color: ${(props) => props.theme.colorGrey1};
-    transition: all 0.15s ease;
-
-    &:hover:not(.rdp-day_selected):not(.rdp-day_outside) {
-      background: ${(props) => props.theme.colorBg4};
-      color: ${(props) => props.theme.colorGrey0};
-    }
-  }
-
-  .rdp-day_outside {
-    color: ${(props) => props.theme.colorGrey4};
-  }
-
-  .rdp-day_today:not(.rdp-day_selected) {
+  .cal-weekday {
+    text-align: center;
+    font-size: 0.68rem;
     font-weight: 700;
-    color: ${(props) => props.theme.colorPrimary};
-    background: ${(props) => props.theme.colorPrimaryLight};
+    color: ${(p) => p.theme.colorGrey3};
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0;
   }
 
-  .rdp-day_selected,
-  .rdp-day_selected:hover {
-    background: ${(props) => props.theme.colorPrimary} !important;
-    color: #fff !important;
-    font-weight: 600;
-    box-shadow: 0 0 12px ${(props) => props.theme.colorPrimaryGlow};
+  /* Grid — fixed 6 rows */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
   }
 
-  .rdp-button:focus-visible {
-    outline: 2px solid ${(props) => props.theme.colorPrimary};
-    outline-offset: 2px;
+  .cal-day {
+    aspect-ratio: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: ${(p) => p.theme.colorGrey1};
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+
+    &:hover:not(:disabled):not(.selected) {
+      background: ${(p) => p.theme.colorBg4};
+      color: ${(p) => p.theme.colorGrey0};
+    }
+
+    &.today {
+      color: ${(p) => p.theme.colorPrimary};
+      background: ${(p) => p.theme.colorPrimaryLight};
+      font-weight: 700;
+    }
+
+    &.selected {
+      background: ${(p) => p.theme.colorPrimary};
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 0 10px ${(p) => p.theme.colorPrimaryGlow};
+    }
+
+    &.outside {
+      color: ${(p) => p.theme.colorGrey4};
+      opacity: 0.5;
+    }
+
+    &:disabled, &.disabled {
+      color: ${(p) => p.theme.colorGrey4};
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
   }
 `;
