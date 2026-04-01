@@ -1,4 +1,4 @@
-import prisma from "@/utils/connect";
+import { supabaseAdmin } from "@/lib/supabase";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -11,18 +11,26 @@ export async function DELETE(
     const { id } = await params;
 
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const task = await prisma.task.delete({
-      where: {
-        id,
-      },
-    });
+    const { error } = await supabaseAdmin
+      .from("todo_tasks")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
 
-    return NextResponse.json(task);
+    if (error) {
+      console.error("Error deleting task:", error);
+      return NextResponse.json(
+        { error: "Error deleting task!" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.log("ERROR DELETING TASK: ", error);
-    return NextResponse.json({ error: "Error deleting task !", status: 500 });
+    console.error("Error deleting task:", error);
+    return NextResponse.json({ error: "Error deleting task!" }, { status: 500 });
   }
 }

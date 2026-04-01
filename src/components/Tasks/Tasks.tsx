@@ -3,6 +3,7 @@ import { useGlobalState } from "@/context/globalProvider";
 import React from "react";
 import styled from "styled-components";
 import CreateContent from "../Modals/CreateContent";
+import DeleteContent from "../Modals/DeleteContent";
 import TaskItem from "../TaskItem/TaskItem";
 import { plus } from "@/utils/Icons";
 import Modal from "../Modals/Modals";
@@ -13,45 +14,53 @@ interface Props {
 }
 
 function Tasks({ title, tasks }: Props) {
-  const { theme, isLoading, openModal, modal } = useGlobalState();
+  const { theme, isLoading, openModal, modal, deleteModalId } = useGlobalState();
 
   return (
     <TaskStyled theme={theme}>
       {modal && <Modal content={<CreateContent />} />}
+      {deleteModalId && <Modal content={<DeleteContent />} />}
 
-      <div className="top-bar">
-        <h2>{title}</h2>
+      <div className="page-header">
+        <div className="header-left">
+          <h1 className="page-title">{title}</h1>
+          <span className="task-count">{tasks.length} tasks</span>
+        </div>
 
-        <button className="btn-rounded" onClick={openModal}>
-          {plus}
+        <button className="btn-create" onClick={openModal}>
+          <span className="btn-icon">{plus}</span>
+          <span>New Task</span>
         </button>
       </div>
 
       {!isLoading ? (
-        <div className="tasks grid">
-          {tasks.length === 0 && (
-            <div className="no-tasks">No tasks available.</div>
+        <div className="tasks-container">
+          {tasks.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📋</div>
+              <h3>No tasks here</h3>
+              <p>Click "New Task" to get started</p>
+            </div>
+          ) : (
+            <div className="tasks-grid">
+              {tasks.map((task) => (
+                <TaskItem
+                  key={task.id}
+                  id={task.id}
+                  date={task.date}
+                  title={task.title}
+                  description={task.description}
+                  isCompleted={task.is_completed}
+                  isImportant={task.is_important}
+                  isUrgent={task.is_urgent}
+                />
+              ))}
+            </div>
           )}
-          {tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              id={task.id}
-              date={task.date}
-              title={task.title}
-              description={task.description}
-              isCompleted={task.isCompleted}
-              isImportant={task.isImportant}
-              isUrgent={task.isUrgent}
-            />
-          ))}
-          {/* <button className="create-task" onClick={openModal}>
-          {add}
-          Add New Task
-        </button> */}
         </div>
       ) : (
-        <div className="tasks-loader w-full h-full flex items-center justify-center">
-          <span className="loader"></span>
+        <div className="tasks-loader">
+          <span className="loader" />
         </div>
       )}
     </TaskStyled>
@@ -60,94 +69,136 @@ function Tasks({ title, tasks }: Props) {
 
 const TaskStyled = styled.main`
   position: relative;
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  background-color: ${(props) => props.theme.colorBg2};
-  border: 2px solid ${(props) => props.theme.borderColor2};
-  border-radius: 1rem;
   height: 100%;
+  background: ${(props) => props.theme.colorBg2};
+  border: 1px solid ${(props) => props.theme.borderColor};
+  border-radius: 16px;
+  overflow: hidden;
 
-  overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    width: 0.5rem;
-  }
-
-  .btn-rounded {
-    position: fixed;
-    top: 4.2rem;
-    right: 4.8rem;
-    width: 3rem;
-    height: 3rem;
-    border-radius: 50%;
-
-    background-color: ${(props) => props.theme.colorBg};
-    border: 2px solid ${(props) => props.theme.borderColor2};
-    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
-    color: ${(props) => props.theme.colorGrey2};
-    font-size: 1.4rem;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    @media screen and (max-width: 768px) {
-      top: 3rem;
-      right: 3.5rem;
-    }
-  }
-
-  .tasks {
-    margin: 5rem 0;
-  }
-
-  .top-bar {
-    position: fixed;
+  /* Page Header */
+  .page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 1.75rem 2rem 1.25rem;
+    border-bottom: 1px solid ${(props) => props.theme.borderColor};
+    flex-shrink: 0;
   }
 
-  h2 {
-    font-size: clamp(1.5rem, 2vw, 2rem);
-    font-weight: 800;
-    position: relative;
-
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: -0.5rem;
-      left: 0;
-      width: 3rem;
-      height: 0.2rem;
-      background-color: ${(props) => props.theme.colorPrimaryGreen};
-      border-radius: 0.5rem;
-    }
+  .header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
   }
 
-  .create-task {
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: ${(props) => props.theme.colorGrey0};
+    letter-spacing: -0.02em;
+  }
+
+  .task-count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: ${(props) => props.theme.colorGrey3};
+    background: ${(props) => props.theme.colorBg4};
+    border: 1px solid ${(props) => props.theme.borderColor};
+    padding: 0.15rem 0.6rem;
+    border-radius: 99px;
+  }
+
+  /* Create Button */
+  .btn-create {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.5rem;
-
-    height: 16rem;
-    color: ${(props) => props.theme.colorGrey2};
+    padding: 0.55rem 1.1rem;
+    background: ${(props) => props.theme.colorPrimary};
+    color: #fff;
+    border-radius: 10px;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    border-radius: 1rem;
-    border: 3px dashed ${(props) => props.theme.colorGrey5};
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
 
-    i {
-      font-size: 1.5rem;
-      margin-right: 0.2rem;
+    .btn-icon {
+      display: flex;
+      align-items: center;
     }
 
     &:hover {
-      background-color: ${(props) => props.theme.colorGrey5};
-      color: ${(props) => props.theme.colorGrey0};
+      background: ${(props) => props.theme.colorPrimaryHover};
+      box-shadow: 0 0 16px ${(props) => props.theme.colorPrimaryGlow};
+      transform: translateY(-1px);
     }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  /* Tasks Container */
+  .tasks-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 2rem;
+
+    @media screen and (max-width: 768px) {
+      padding: 1rem;
+    }
+  }
+
+  /* Grid */
+  .tasks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+    gap: 0.5rem;
+    color: ${(props) => props.theme.colorGrey3};
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: ${(props) => props.theme.colorGrey2};
+    }
+
+    p {
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Loader */
+  .tasks-loader {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 `;
 

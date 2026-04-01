@@ -2,30 +2,40 @@
 import React from "react";
 import styled from "styled-components";
 
+import { useGlobalState } from "@/context/globalProvider";
+
 interface Props {
   children: React.ReactNode;
 }
 
 function GlobalStyleProvider({ children }: Props) {
-  return <GlobalStyles>{children}</GlobalStyles>;
+  const { theme } = useGlobalState();
+  return <GlobalStyles theme={theme}>{children}</GlobalStyles>;
 }
 
 const GlobalStyles = styled.div`
-  padding: 2rem;
   display: flex;
-  gap: 2rem;
-  height: 100%;
-  transition: all 0.3s ease-in-out;
+  background-color: ${(props) => props.theme.colorBg};
+  color: ${(props) => props.theme.colorGrey0};
+  gap: 1.25rem;
+  padding: 1.25rem;
+  height: 100vh;
+  overflow: hidden;
+  transition: all 0.3s ease;
 
-  @media screen and (max-width: 768px) {
-    padding: 2rem;
-    gap: 1rem;
+  .main-content {
+    flex: 1;
+    overflow: hidden;
+    min-width: 0;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 1rem;
+  @media screen and (max-width: 768px) {
+    padding: 1rem;
+    gap: 0;
+
+    .main-content {
+      flex: 1;
+    }
   }
 `;
 

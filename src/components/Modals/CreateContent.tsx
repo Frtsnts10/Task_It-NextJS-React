@@ -1,12 +1,11 @@
 "use client";
 
 import { useGlobalState } from "@/context/globalProvider";
-import axios from "axios";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import Button from "../Button/Button";
 import styled from "styled-components";
-import { plus } from "@/utils/Icons";
+import { cross } from "@/utils/Icons";
+import DatePicker from "../DatePicker/DatePicker";
 
 function CreateContent() {
   const [title, setTitle] = useState("");
@@ -14,246 +13,440 @@ function CreateContent() {
   const [date, setDate] = useState("");
   const [completed, setCompleted] = useState(false);
   const [important, setImportant] = useState(false);
-  const [highPriority, sethighPriority] = useState(false);
+  const [highPriority, setHighPriority] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { theme, allTasks, closeModal } = useGlobalState();
 
-  const handleChange = (name: string) => (e: any) => {
-    // console.log(name, e.target.value);
-    switch (name) {
-      case "title":
-        setTitle(e.target.value);
-        break;
-      case "description":
-        setDescription(e.target.value);
-        break;
-      case "date":
-        setDate(e.target.value);
-        break;
-      case "completed":
-        setCompleted(e.target.checked);
-        break;
-      case "important":
-        setImportant(e.target.checked);
-        break;
-      case "highPriority":
-        sethighPriority(e.target.checked);
-      default:
-        break;
-    }
-  };
-
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const task = {
-      title,
-      description,
-      date,
-      completed,
-      important,
-      highPriority,
-    };
-
-    try {
-      const res = await axios.post("api/tasks", task);
-
-      if (!res.data.error) {
-        toast.success("Task created successfully !");
-        allTasks();
-        closeModal();
-      }
-    } catch (error) {
-      toast.error("Something went wrong !");
-      console.log(error);
+    if (!title.trim()) {
+      toast.error("Please enter a title");
+      return;
     }
-    // console.log(title, description, date, completed, important);
+    if (title.trim().length < 3) {
+      toast.error("Title must be at least 3 characters");
+      return;
+    }
+    if (!date) {
+      toast.error("Please select a date");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+          date,
+          completed,
+          important,
+          highPriority,
+        }),
+      });
+
+      const contentType = res.headers.get("content-type");
+      let data;
+      
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      }
+
+      if (!res.ok) {
+        const errorMsg = data?.error || `Error ${res.status}: ${res.statusText}`;
+        toast.error(errorMsg);
+        return;
+      }
+
+      toast.success("Task created!");
+      allTasks();
+      closeModal();
+    } catch (err: any) {
+      console.error("Task creation failed:", err);
+      toast.error(err.message || "Something went wrong! Check connection.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <CreateContentStyled onSubmit={handleSubmit} theme={theme}>
-      <h1>Create a Task</h1>
-
-      <div className="input-control">
-        <label htmlFor="title">Title</label>
-        <input
-          type="text"
-          id="title"
-          value={title}
-          name="title"
-          onChange={handleChange("title")}
-          placeholder="Enter a title"
-        />
+    <CreateStyled onSubmit={handleSubmit} theme={theme}>
+      {/* Header */}
+      <div className="modal-header">
+        <div className="header-left">
+          <div className="header-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </div>
+          <h2>New Task</h2>
+        </div>
+        <button type="button" className="close-btn" onClick={closeModal}>
+          {cross}
+        </button>
       </div>
 
-      <div className="input-control">
-        <label htmlFor="description">Description</label>
-        <textarea
-          name="description"
-          id="description"
-          rows={4}
-          value={description}
-          onChange={handleChange("description")}
-          placeholder="Enter a description"
-        ></textarea>
-      </div>
-
-      <div className="input-control">
-        <label htmlFor="date">Date</label>
-        <input
-          value={date}
-          onChange={handleChange("date")}
-          type="date"
-          name="date"
-          id="date"
-        />
-      </div>
-
-      <div className="options">
-        <div className="input-control toggler">
-          <label htmlFor="completed">Completed</label>
+      {/* Body */}
+      <div className="modal-body">
+        {/* Title */}
+        <div className="field">
+          <label htmlFor="title">Title <span className="required">*</span></label>
           <input
-            value={completed.toString()}
-            onChange={handleChange("completed")}
-            type="checkbox"
-            name="completed"
-            id="completed"
-            checked={completed}
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What needs to be done?"
+            autoFocus
+            maxLength={80}
           />
         </div>
 
-        <div className="input-control toggler">
-          <label htmlFor="important">Important</label>
-          <input
-            value={important.toString()}
-            onChange={handleChange("important")}
-            type="checkbox"
-            name="important"
-            id="important"
-            checked={important}
+        {/* Description */}
+        <div className="field">
+          <label htmlFor="description">Description <span className="optional">(optional)</span></label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Add more details..."
+            rows={3}
           />
         </div>
 
-        <div className="input-control toggler">
-          <label htmlFor="important">High Priority</label>
-          <input
-            value={highPriority.toString()}
-            onChange={handleChange("highPriority")}
-            type="checkbox"
-            name="highPriority"
-            id="highPriority"
-            checked={highPriority}
+        {/* Date */}
+        <div className="field">
+          <label>Due Date <span className="required">*</span></label>
+          <DatePicker
+            value={date}
+            onChange={setDate}
+            placeholder="Pick a due date"
           />
+        </div>
+
+        {/* Toggles */}
+        <div className="toggles-grid">
+          <div className="toggle-item">
+            <div className="toggle-info">
+              <span className="toggle-icon">✓</span>
+              <div>
+                <p className="toggle-name">Completed</p>
+                <p className="toggle-desc">Mark as done</p>
+              </div>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={completed}
+                onChange={(e) => setCompleted(e.target.checked)}
+              />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+
+          <div className="toggle-item">
+            <div className="toggle-info">
+              <span className="toggle-icon important">★</span>
+              <div>
+                <p className="toggle-name">Important</p>
+                <p className="toggle-desc">High importance</p>
+              </div>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={important}
+                onChange={(e) => setImportant(e.target.checked)}
+              />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+
+          <div className="toggle-item">
+            <div className="toggle-info">
+              <span className="toggle-icon urgent">⚡</span>
+              <div>
+                <p className="toggle-name">Urgent</p>
+                <p className="toggle-desc">High priority</p>
+              </div>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={highPriority}
+                onChange={(e) => setHighPriority(e.target.checked)}
+              />
+              <span className="toggle-slider" />
+            </label>
+          </div>
         </div>
       </div>
 
-      <div className="submit-btn flex justify-end">
-        <Button
-          type="submit"
-          name="Create Task"
-          // icon={plus}
-          padding={"0.8rem 2rem"}
-          borderRad={"0.8rem"}
-          fw={"500"}
-          fs={"1.2rem"}
-          background={"rgb(0, 163, 255)"}
-        />
+      {/* Footer */}
+      <div className="modal-footer">
+        <button type="button" className="btn-cancel" onClick={closeModal}>
+          Cancel
+        </button>
+        <button type="submit" className="btn-submit" disabled={loading}>
+          {loading ? (
+            <span className="btn-loader" />
+          ) : (
+            "Create Task"
+          )}
+        </button>
       </div>
-    </CreateContentStyled>
+    </CreateStyled>
   );
 }
 
-const CreateContentStyled = styled.form`
-  > h1 {
-    font-size: clamp(1.2rem, 5vw, 1.6rem);
-    font-weight: 600;
-  }
+const CreateStyled = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
 
-  color: ${(props) => props.theme.colorGrey1};
-
-  .input-control {
-    position: relative;
-    margin: 1.6rem 0;
-    font-weight: 500;
-
-    @media screen and (max-width: 450px) {
-      margin: 1rem 0;
-    }
-
-    label {
-      margin-bottom: 0.5rem;
-      display: inline-block;
-      font-size: clamp(0.9rem, 5vw, 1.2rem);
-
-      span {
-        color: ${(props) => props.theme.colorGrey3};
-      }
-    }
-
-    input,
-    textarea {
-      width: 100%;
-      padding: 1rem;
-
-      resize: none;
-      background-color: ${(props) => props.theme.colorGreyDark};
-      color: ${(props) => props.theme.colorGrey2};
-      border-radius: 0.5rem;
-    }
-  }
-
-  .submit-btn button {
-    transition: all 0.35s ease-in-out;
-
-    @media screen and (max-width: 500px) {
-      font-size: 0.9rem !important;
-      padding: 0.6rem 1rem !important;
-
-      i {
-        font-size: 1.2rem !important;
-        margin-right: 0.5rem !important;
-      }
-    }
-
-    i {
-      color: ${(props) => props.theme.colorGrey0};
-    }
-
-    &:hover {
-      background: ${(props) => props.theme.colorPrimaryGreen} !important;
-      color: ${(props) => props.theme.colorWhite} !important;
-    }
-  }
-
-  .options {
-    display: grid;
-    gap: 1.5rem;
-    margin: 1rem 0 1rem 0;
-    grid-template-columns: repeat(3, 1fr);
-
-    @media screen and (max-width: 876px) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    @media screen and (max-width: 500px) {
-      grid-template-columns: repeat(1, 1fr);
-    }
-  }
-
-  .toggler {
+  /* Header */
+  .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid ${(props) => props.theme.borderColor};
+    flex-shrink: 0;
+  }
 
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .header-icon {
+    width: 32px;
+    height: 32px;
+    background: ${(props) => props.theme.colorPrimaryLight};
+    border: 1px solid ${(props) => props.theme.borderColorAccent};
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: ${(props) => props.theme.colorPrimary};
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: ${(props) => props.theme.colorGrey0};
+  }
+
+  .close-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    color: ${(props) => props.theme.colorGrey3};
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: ${(props) => props.theme.colorBg4};
+      color: ${(props) => props.theme.colorGrey1};
+    }
+  }
+
+  /* Body */
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  /* Fields */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
 
     label {
-      margin: auto;
-      flex: 1;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: ${(props) => props.theme.colorGrey2};
+      letter-spacing: 0.03em;
     }
 
-    input {
-      width: initial;
+    .required {
+      color: ${(props) => props.theme.colorDanger};
+      margin-left: 2px;
+    }
+
+    .optional {
+      color: ${(props) => props.theme.colorGrey3};
+      font-weight: 400;
+    }
+
+    input,
+    textarea,
+    select {
+      padding: 0.7rem 0.9rem;
+      background: ${(props) => props.theme.colorBg};
+      border: 1px solid ${(props) => props.theme.borderColor};
+      border-radius: 9px;
+      color: ${(props) => props.theme.colorGrey0};
+      font-size: 0.9rem;
+      resize: none;
+      transition: all 0.2s ease;
+
+      &::placeholder {
+        color: ${(props) => props.theme.colorGrey4};
+      }
+
+      &:focus {
+        border-color: ${(props) => props.theme.colorPrimary};
+        box-shadow: 0 0 0 3px ${(props) => props.theme.colorPrimaryLight};
+        outline: none;
+      }
+    }
+
+    input[type="date"] {
+      color-scheme: dark;
+    }
+  }
+
+  /* Toggles */
+  .toggles-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border: 1px solid ${(props) => props.theme.borderColor};
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    background: ${(props) => props.theme.colorBg};
+    border-bottom: 1px solid ${(props) => props.theme.borderColor};
+    transition: background 0.2s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: ${(props) => props.theme.colorBg4};
+    }
+  }
+
+  .toggle-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .toggle-icon {
+    font-size: 1rem;
+    width: 24px;
+    text-align: center;
+    color: ${(props) => props.theme.colorGrey3};
+
+    &.important {
+      color: ${(props) => props.theme.colorWarning};
+    }
+
+    &.urgent {
+      color: ${(props) => props.theme.colorDanger};
+    }
+  }
+
+  .toggle-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: ${(props) => props.theme.colorGrey1};
+  }
+
+  .toggle-desc {
+    font-size: 0.75rem;
+    color: ${(props) => props.theme.colorGrey3};
+  }
+
+  /* Footer */
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid ${(props) => props.theme.borderColor};
+    flex-shrink: 0;
+  }
+
+  .btn-cancel {
+    padding: 0.6rem 1.2rem;
+    border-radius: 9px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: ${(props) => props.theme.colorGrey2};
+    background: ${(props) => props.theme.colorBg4};
+    border: 1px solid ${(props) => props.theme.borderColor};
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: ${(props) => props.theme.colorBg3};
+      color: ${(props) => props.theme.colorGrey0};
+    }
+  }
+
+  .btn-submit {
+    padding: 0.6rem 1.4rem;
+    border-radius: 9px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: ${(props) => props.theme.colorPrimary};
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+
+    &:hover:not(:disabled) {
+      background: ${(props) => props.theme.colorPrimaryHover};
+      box-shadow: 0 0 16px ${(props) => props.theme.colorPrimaryGlow};
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: transparent !important;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    box-shadow: none !important;
+    animation: spin 0.61s linear infinite;
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   }
 `;

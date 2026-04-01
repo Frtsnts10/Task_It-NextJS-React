@@ -3,22 +3,18 @@ import React from "react";
 import styled from "styled-components";
 import { useGlobalState } from "@/context/globalProvider";
 import Image from "next/image";
-
 import menu from "@/utils/menu";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Button from "../Button/Button";
 import { arrowLeft, bars, logout, gear } from "@/utils/Icons";
 import { UserButton, useClerk, useUser } from "@clerk/nextjs";
-import EditContent from "../Modals/EditContent";
+import SettingsContent from "../Modals/SettingsContent";
 import Modal from "../Modals/Modals";
 
 function Sidebar() {
   const { theme, collapsed, collapseMenu } = useGlobalState();
   const { signOut } = useClerk();
-
   const { user } = useUser();
-
   const { firstName, lastName, imageUrl } = user || {
     firstName: "",
     lastName: "",
@@ -27,308 +23,338 @@ function Sidebar() {
 
   const router = useRouter();
   const pathname = usePathname();
+  const { settings, openSettings } = useGlobalState();
+
+  // Fallback avatar if no imageUrl is provided
+  const avatarSrc = imageUrl && imageUrl !== "" ? imageUrl : "https://res.cloudinary.com/dt9rvu6it/image/upload/v1711200000/avatar-placeholder_p9x8p5.png";
 
   const handleClick = (link: string) => {
     router.push(link);
   };
 
-  const { settings, openSettings } = useGlobalState();
-
   return (
     <SidebarStyled theme={theme} collapsed={collapsed.toString()}>
-      {settings && <Modal content={<EditContent />} />}
+      {settings && <Modal content={<SettingsContent />} />}
 
       <button className="toggle-nav" onClick={collapseMenu}>
         {collapsed ? bars : arrowLeft}
       </button>
 
-      <div className="profile">
-        <div className="profile-overlay"></div>
-
-        <div className="image">
-          <Image width={70} height={70} src={imageUrl} alt="profile" />
+      <div className="sidebar-inner">
+        {/* Profile */}
+        <div className="profile">
+          <div className="profile-overlay" />
+          <div className="avatar-wrapper">
+            <Image 
+              width={44} 
+              height={44} 
+              src={avatarSrc} 
+              alt="profile" 
+              priority
+            />
+            <div className="user-btn-overlay">
+              <UserButton />
+            </div>
+          </div>
+          <div className="profile-info">
+            <span className="greeting">Hello,</span>
+            <h2 className="name capitalize">
+              {firstName} {lastName}
+            </h2>
+          </div>
         </div>
 
-        <div className="user-btn absolute z-20 top-0 w-full h-full">
-          <UserButton />
-        </div>
-        <h1 className="capitalize">
-          {firstName} {lastName}
-        </h1>
+        {/* Label */}
+        <div className="nav-label">Navigation</div>
+
+        {/* Nav Items */}
+        <ul className="nav-items">
+          {menu.map((item) => {
+            const link = item.link;
+            const isActive = pathname === link;
+            return (
+              <li
+                key={item.id}
+                className={`nav-item ${isActive ? "active" : ""}`}
+                onClick={() => handleClick(link)}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <Link href={link} className="nav-label-text">
+                  {item.title}
+                </Link>
+                {isActive && <span className="active-dot" />}
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
-      <ul className="nav-items">
-        {menu.map((item) => {
-          const link = item.link;
-          return (
-            <li
-              key={item.id}
-              className={`nav-item ${pathname === link ? "active" : ""}`}
-              onClick={() => {
-                handleClick(link);
-              }}
-            >
-              {item.icon}
-              <Link href={link}>{item.title}</Link>
-            </li>
-          );
-        })}
-      </ul>
-
-      <ul className="options">
-        <li className="settings" onClick={openSettings}>
-          {gear}
-          <h1>Settings</h1>
-        </li>
-
-        <li
-          className="sign-out"
-          onClick={() => {
-            signOut(() => router.push("/"));
-          }}
+      {/* Footer */}
+      <div className="sidebar-footer">
+        <button className="footer-btn" onClick={openSettings}>
+          <span className="nav-icon">{gear}</span>
+          <span>Settings</span>
+        </button>
+        <button
+          className="footer-btn sign-out"
+          onClick={() => signOut(() => router.push("/"))}
         >
-          {logout}
-          <h1>Sign Out</h1>
-        </li>
-      </ul>
+          <span className="nav-icon">{logout}</span>
+          <span>Sign Out</span>
+        </button>
+      </div>
     </SidebarStyled>
   );
 }
 
-const SidebarStyled = styled.nav<{ collapsed: boolean }>`
+const SidebarStyled = styled.nav<{ collapsed: string }>`
   position: relative;
   width: ${(props) => props.theme.sidebarWidth};
-  background-color: ${(props) => props.theme.colorBg2};
-  border: 2px solid ${(props) => props.theme.borderColor2};
-  border-radius: 1rem;
-
+  min-width: ${(props) => props.theme.sidebarWidth};
+  background: ${(props) => props.theme.colorBg2};
+  border: 1px solid ${(props) => props.theme.borderColor};
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-
-  color: ${(props) => props.theme.colorGrey3};
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   @media screen and (max-width: 768px) {
     position: fixed;
-    height: calc(100vh - 4rem);
+    top: 1rem;
+    left: 1rem;
+    height: calc(100vh - 2rem);
     z-index: 100;
-
-    transition: all 0.3s cubic-bezier(0.53, 0.21, 0, 1);
     transform: ${(props) =>
-      props.collapsed ? "translateX(-114%)" : "translateX(0)"};
+      props.collapsed === "true" ? "translateX(-120%)" : "translateX(0)"};
 
     .toggle-nav {
-      display: block !important;
+      display: flex !important;
     }
   }
 
   .toggle-nav {
     display: none;
-    padding: 0.8rem 0.9rem;
     position: absolute;
-    right: -69px;
-    top: 1.8rem;
-
-    border-top-right-radius: 1rem;
-    border-bottom-right-radius: 1rem;
-
-    background-color: ${(props) => props.theme.colorBg2};
-    border-right: 2px solid ${(props) => props.theme.borderColor2};
-    border-top: 2px solid ${(props) => props.theme.borderColor2};
-    border-bottom: 2px solid ${(props) => props.theme.borderColor2};
-  }
-
-  .user-btn {
-    .cl-rootBox {
-      width: 100%;
-      height: 100%;
-
-      .cl-userButtonBox {
-        width: 100%;
-        height: 100%;
-
-        .cl-userButtonTrigger {
-          width: 100%;
-          height: 100%;
-          opacity: 0;
-        }
-      }
-    }
-  }
-
-  .profile {
-    margin: 1.5rem;
-    padding: 1rem 0.8rem;
-    position: relative;
-
-    border-radius: 1rem;
+    right: -52px;
+    top: 1.5rem;
+    z-index: 200;
+    padding: 0.6rem 0.9rem;
+    background: ${(props) => props.theme.colorBg2};
+    border: 1px solid ${(props) => props.theme.borderColor};
+    border-left: none;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
     cursor: pointer;
-
-    font-weight: 500;
     color: ${(props) => props.theme.colorGrey0};
-
-    display: flex;
     align-items: center;
-
-    .profile-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      backdrop-filter: blur(10px);
-      z-index: 0;
-      background: ${(props) => props.theme.colorBg3};
-      transition: all 0.55s linear;
-      border-radius: 1rem;
-      border: 2px solid ${(props) => props.theme.borderColor2};
-
-      opacity: 0.2;
-    }
-
-    h1 {
-      font-size: 1.2rem;
-      display: flex;
-      flex-direction: column;
-
-      line-height: 1.4rem;
-    }
-
-    .image,
-    h1 {
-      position: relative;
-      z-index: 1;
-    }
-
-    .image {
-      flex-shrink: 0;
-      display: inline-block;
-      overflow: hidden;
-      transition: all 0.5s ease;
-      border-radius: 100%;
-
-      width: 70px;
-      height: 70px;
-
-      img {
-        border-radius: 100%;
-        transition: all 0.5s ease;
-      }
-    }
-
-    > h1 {
-      margin-left: 0.8rem;
-      font-size: clamp(1.2rem, 4vw, 1.4rem);
-      line-height: 100%;
-    }
+    justify-content: center;
+    transition: background 0.2s ease;
 
     &:hover {
-      .profile-overlay {
-        opacity: 1;
-        border: 2px solid ${(props) => props.theme.borderColor2};
-      }
+      background: ${(props) => props.theme.colorBg3};
+    }
+  }
 
-      img {
-        transform: scale(1.1);
+  .sidebar-inner {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.5rem 0.75rem;
+
+    &::-webkit-scrollbar {
+      width: 0;
+    }
+  }
+
+  /* Profile */
+  .profile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 0.75rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    background: ${(props) => props.theme.colorPrimaryLight};
+    border: 1px solid ${(props) => props.theme.borderColorAccent};
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(99, 102, 241, 0.18);
+    }
+  }
+
+  .avatar-wrapper {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+
+    img {
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid ${(props) => props.theme.colorPrimary};
+    }
+
+    .user-btn-overlay {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      z-index: 10;
+
+      .cl-rootBox,
+      .cl-userButtonBox,
+      .cl-userButtonTrigger {
+        width: 100%;
+        height: 100%;
       }
     }
+  }
+
+  .profile-info {
+    overflow: hidden;
+    .greeting {
+      display: block;
+      font-size: 11px;
+      color: ${(props) => props.theme.colorGrey2};
+      letter-spacing: 0.05em;
+    }
+    .name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: ${(props) => props.theme.colorGrey0};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  /* Nav label */
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: ${(props) => props.theme.colorGrey3};
+    padding: 0 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Nav items */
+  .nav-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
   .nav-item {
     position: relative;
-    padding: 0.5rem 1.5rem;
-    font-size: 1rem;
-
-    display: grid;
-    grid-template-columns: 20px 1fr;
-
-    gap: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
     cursor: pointer;
-    margin: auto;
+    transition: all 0.2s ease;
+    color: ${(props) => props.theme.colorGrey2};
 
-    &::after {
-      position: absolute;
-      content: "";
-      left: 0;
-      top: 0;
-      width: 0;
-      height: 100%;
-      background-color: ${(props) => props.theme.activeNavLinkHover};
-      z-index: 1;
-      transition: all 0.3s ease-in-out;
-    }
-
-    &::before {
-      position: absolute;
-      content: "";
-      right: 0;
-      top: 0;
-      width: 0%;
-      height: 100%;
-      background-color: ${(props) => props.theme.colorGreenDark};
-
-      border-bottom-left-radius: 5px;
-      border-top-left-radius: 5px;
-    }
-
-    a {
-      font-weight: 600;
-      transition: all 0.3s ease-in-out;
-      z-index: 2;
-    }
-
-    i {
+    .nav-icon {
       display: flex;
-      margin: auto;
       align-items: center;
-      color: ${(props) => props.theme.colorIcons};
+      justify-content: center;
+      width: 20px;
+      flex-shrink: 0;
+      color: ${(props) => props.theme.colorGrey3};
+      transition: color 0.2s ease;
+    }
+
+    .nav-label-text {
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .active-dot {
+      position: absolute;
+      right: 0.75rem;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: ${(props) => props.theme.colorPrimary};
+      box-shadow: 0 0 8px ${(props) => props.theme.colorPrimary};
     }
 
     &:hover {
-      &::after {
-        width: 100%;
+      background: ${(props) => props.theme.activeNavLinkHover};
+      color: ${(props) => props.theme.colorGrey1};
+
+      .nav-icon {
+        color: ${(props) => props.theme.colorGrey2};
+      }
+    }
+
+    &.active {
+      background: ${(props) => props.theme.activeNavLink};
+      color: ${(props) => props.theme.colorGrey0};
+      border: 1px solid ${(props) => props.theme.borderColorAccent};
+
+      .nav-icon {
+        color: ${(props) => props.theme.colorPrimary};
+      }
+
+      .nav-label-text {
+        color: ${(props) => props.theme.colorGrey0};
+        font-weight: 600;
       }
     }
   }
 
-  .active {
-    background-color: ${(props) => props.theme.activeNavLink};
-
-    i,
-    a {
-      color: ${(props) => props.theme.colorIcons2};
-    }
+  /* Footer */
+  .sidebar-footer {
+    padding: 0.75rem;
+    border-top: 1px solid ${(props) => props.theme.borderColor};
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
-  .active::before {
-    width: 0.3rem;
-  }
-
-  .settings,
-  .sign-out {
-    position: relative;
-    padding: 0.5rem 1.5rem;
-    font-size: 1rem;
-
-    display: grid;
-    grid-template-columns: 20px 1fr;
-
-    gap: 1.2rem;
+  .footer-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
     cursor: pointer;
-    margin: 1rem auto;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: ${(props) => props.theme.colorGrey2};
+    transition: all 0.2s ease;
 
-    i {
+    .nav-icon {
       display: flex;
-      justify-content: center;
       align-items: center;
-
-      font-size: 1.4rem;
+      width: 20px;
+      flex-shrink: 0;
+      color: ${(props) => props.theme.colorGrey3};
     }
 
-    h1 {
-      display: flex;
-      justify-content: start;
-      font-size: 1.2rem;
+    &:hover {
+      background: ${(props) => props.theme.activeNavLinkHover};
+      color: ${(props) => props.theme.colorGrey1};
+    }
+
+    &.sign-out:hover {
+      background: ${(props) => props.theme.colorDangerLight};
+      color: ${(props) => props.theme.colorDanger};
+
+      .nav-icon {
+        color: ${(props) => props.theme.colorDanger};
+      }
     }
   }
 `;

@@ -1,134 +1,149 @@
 const themes = [
   {
-    name: "default",
-    colorBg: "#252525",
-    colorBg2: "#212121",
-    colorBg3: "#181818",
-    colorBg4: "#1A1A1A",
-    colorButton: "#3A3B3C",
-    colorDanger: "#ff0000",
-    colorFontPrimary: "#e5e7eb",
-    colorTextSecondary: "#B0B3B8",
-    colorTextPrimary: "#FFFFFF",
-    colorTextLight: "#f8f8f8",
-    colorbackground: "#FBFBFD",
-    colorGradient: "linear-gradient(110.42deg, #CF57A3 29.2%, #4731B6 63.56%)",
-    colorGreenDark: "#008000",
-    colorGreenLight: "#dbe1e8",
-    activeNavLink: "rgba(249,249,249, 0.08)",
-    activeNavLinkHover: "rgba(249,249,249, 0.03)",
-    colorMinor:"#468499",
-    colorHigh:"#ff7373",
-    colorLow:"#c0c0c0",
-    colorPrimary: "#7263F3",
-    colorPrimary2: "#FF6666",
-    colorGreyDark: "#131313",
-    colorGrey0: "#f8f8f8",
-    colorGrey1: "#dbe1e8",
-    colorGrey2: "#b2becd",
-    colorGrey3: "#6c7983",
-    colorGrey4: "#454e56",
-    colorGrey5: "#2a2e35",
-    colorGrey6: "#12181b",
-    colorWhite: "#fff",
-    colorPrimaryGreen: "#6FCF97",
-    borderColor: "rgba(249,249,249, 0.08)",
-    borderColor2: "rgba(249,249,249, 0.08)",
-    shadow7: "1px 7px 12px rgba(8, 18, 69, 0.1)",
-    sidebarWidth: "15rem",
-    sidebarCollapsed: "5.4rem",
-    fH4: "19px",
-    fontSmall: "14px",
-    fontSmall2: "15px",
-    gridGap: "2rem",
-    padLRSm: "0 2rem",
-    colorIcons: "rgba(249,249,249, 0.35)",
-    colorIcons2: "rgba(249,249,249, 0.75)",
-    colorIcons3: "rgba(249,249,249, 0.08)",
-    colorIcons4: "rgba(0,0,0, 0.3)",
-    marLRSm: "0 1rem",
+    name: "dark",
+    // Backgrounds
+    colorBg: "#0d1117",
+    colorBg2: "#161b22",
+    colorBg3: "#1c2128",
+    colorBg4: "#21262d",
+    colorBgGlass: "rgba(22, 27, 34, 0.7)",
+
+    // Borders
+    borderColor: "rgba(48, 54, 61, 0.8)",
+    borderColor2: "rgba(48, 54, 61, 0.8)",
+    borderColorAccent: "rgba(99, 102, 241, 0.35)",
+
+    // Text
+    colorGrey0: "#e6edf3",
+    colorGrey1: "#c9d1d9",
+    colorGrey2: "#8b949e",
+    colorGrey3: "#6e7681",
+    colorGrey4: "#484f58",
+    colorGrey5: "#21262d",
+    colorGrey6: "#161b22",
+
+    colorWhite: "#ffffff",
+    colorFontPrimary: "#e6edf3",
+    colorTextSecondary: "#8b949e",
+
+    // Accent
+    colorPrimary: "#6366f1",
+    colorPrimaryHover: "#818cf8",
+    colorPrimaryGlow: "rgba(99, 102, 241, 0.25)",
+    colorPrimaryLight: "rgba(99, 102, 241, 0.12)",
+    colorPrimaryGreen: "#6366f1",
+
+    // Status
+    colorGreenDark: "#3fb950",
+    colorGreenLight: "rgba(63, 185, 80, 0.12)",
+    colorDanger: "#f85149",
+    colorDangerLight: "rgba(248, 81, 73, 0.12)",
+    colorWarning: "#d29922",
+    colorWarningLight: "rgba(210, 153, 34, 0.12)",
+    colorInfo: "#58a6ff",
+    colorInfoLight: "rgba(88, 166, 255, 0.12)",
+
+    // Task badge colors
+    colorMinor: "rgba(88, 166, 255, 0.2)",
+    colorMinorText: "#58a6ff",
+    colorHigh: "rgba(248, 81, 73, 0.2)",
+    colorHighText: "#f85149",
+    colorLow: "rgba(139, 148, 158, 0.2)",
+    colorLowText: "#8b949e",
+    colorImportant: "rgba(210, 153, 34, 0.2)",
+    colorImportantText: "#d29922",
+
+    // Nav
+    activeNavLink: "rgba(99, 102, 241, 0.1)",
+    activeNavLinkHover: "rgba(255,255,255, 0.03)",
+    colorIcons: "#6e7681",
+    colorIcons2: "#6366f1",
+
+    // UI
+    sidebarWidth: "16rem",
+    sidebarCollapsed: "5rem",
+
+    // Shadows
+    shadow7: "0 4px 20px rgba(0, 0, 0, 0.5)",
+    shadowGlow: "0 0 20px rgba(99, 102, 241, 0.2)",
+
+    // Misc
+    colorGreyDark: "#0d1117",
+    colorButton: "#21262d",
+    gridGap: "1rem",
   },
   {
     name: "light",
-    colorBg: "#fff",
-    colorBg2: "#F9F9F9",
-    colorBg3: "#EDEDED",
-    colorBg4: "#1A1A1A",
-    colorButton: "#3A3B3C",
-    colorDanger: "#fe6854",
-    colorTextSecondary: "#B0B3B8",
-    colorFontPrimary: "#6c7983",
-    colorTextPrimary: "#FFFFFF",
-    colorTextLight: "#f8f8f8",
-    colorbackground: "#FBFBFD",
-    colorGradient: "linear-gradient(110.42deg, #CF57A3 29.2%, #4731B6 63.56%)",
-    colorGreenDark: "#27AE60",
-    colorGreenLight: "#dbe1e8",
-    activeNavLink: "rgba(230,230,230, .87)",
-    activeNavLinkHover: "#C5C5C5",
-    colorPrimary: "#7263F3",
-    colorPrimary2: "#705DF2",
-    colorGreyDark: "#131313",
-    colorGrey0: "#f8f8f8",
-    colorGrey1: "#dbe1e8",
-    colorGrey2: "#b2becd",
-    colorGrey3: "#6c7983",
-    colorGrey4: "#454e56",
-    colorGrey5: "#2a2e35",
-    colorGrey6: "#12181b",
-    colorWhite: "#fff",
-    buttonGradient1:
-      "linear-gradient(110.42deg, rgba(107, 190, 146, 0.7) 29.2%, rgba(245, 102, 146, 0.7) 63.56%)",
-    buttonGradient2:
-      "linear-gradient(110.42deg, rgba(25, 151, 222, 0.7) 29.2%, rgba(168, 85, 247, 0.7) 63.56%)",
-    buttonGradient3:
-      "linear-gradient(110.42deg, rgba(25, 151, 222, 0.7) 29.2%, rgba(168, 85, 247, 0.7) 63.56%)",
-    buttonGradient4:
-      "linear-gradient(110.42deg, rgba(168, 85, 247, 0.7) 29.2%, rgba(245, 102, 146, 0.7) 63.56%)",
-    buttonGradient5:
-      "linear-gradient(110.42deg, rgba(25, 151, 222, 0.7) 29.2%, rgba(168, 85, 247, 0.7) 63.56%)",
-    buttonGradient6:
-      "linear-gradient(110.42deg, rgba(25, 151, 222, 0.7) 29.2%, rgba(168, 85, 247, 0.7) 63.56%)",
-    buttonGradient7:
-      "linear-gradient(110.42deg, rgba(41, 25, 222, 0.7) 29.2%, rgba(235, 87, 87, 0.7) 63.56%)",
-    buttonGradient8:
-      "linear-gradient(110.42deg, rgba(25, 151, 222, 0.7) 29.2%, rgba(168, 85, 247, 0.7) 63.56%)",
-    buttonGradient9:
-      "linear-gradient(110.42deg, rgba(226, 195, 33, 0.7) 29.2%, rgba(247, 104, 85, 0.7) 63.56%)",
-    buttonGradient10:
-      "linear-gradient(110.42deg, rgba(235, 87, 87, 0.7) 29.2%, rgba(189, 68, 166, 0.7) 53.82%, rgba(247, 85, 143, 0.1) 63.56%)",
-    buttonGradient11:
-      "linear-gradient(110.42deg, rgba(25, 151, 222, 0.7) 29.2%, rgba(168, 85, 247, 0.7) 63.56%)",
-    buttonGradient12:
-      "linear-gradient(110.42deg, rgba(226, 195, 33, 0.7) 29.2%, rgba(247, 104, 85, 0.7) 63.56%)",
-    buttonGradient13:
-      "linear-gradient(110.42deg, rgba(226, 195, 33, 0.7) 29.2%, rgba(99, 3, 255, 0.7) 63.56%)",
-    buttonGradient14:
-      "linear-gradient(110.42deg, rgba(41, 25, 222, 0.7) 29.2%, rgba(235, 87, 87, 0.7) 63.56%)",
-    borderRadiusMd: "12px",
-    borderRadiusMd2: "15px",
-    borderRadiusSm: "8px",
-    borderColor: "rgba(249,249,249, 0.08)",
-    borderColor2: "rgba(249,249,249, 0.08)",
-    shadow1: "4px 4px 84px rgba(16, 10, 86, 0.04)",
-    shadow2: "0px 48px 77px rgba(8, 18, 69, 0.07)",
-    shadow3: "0 14px 40px rgb(0 0 0 / 25%)",
-    shadow7: "0px 48px 77px rgba(8, 18, 69, 0.16)",
-    shadow5: "0px 4px 0px rgba(249,249,249, 0.35)",
-    shadow6:
-      "0px 6px 20px rgba(0, 0, 0, 0.15), 0px -3px 20px rgba(0, 0, 0, 0.1)",
-    sidebarWidth: "15rem",
-    sidebarCollapsed: "5.4rem",
-    fH4: "19px",
-    fontSmall: "14px",
-    fontSmall2: "15px",
-    gridGap: "2rem",
-    padLRSm: "0 2rem",
-    colorIcons: "#999999",
-    colorIcons2: "#181818",
-    colorIcons3: "rgba(249,249,249, 0.08)",
-    colorIcons4: "rgba(0,0,0, 0.3)",
-    marLRSm: "0 1rem",
+    // Backgrounds
+    colorBg: "#f8fafc",
+    colorBg2: "#ffffff",
+    colorBg3: "#f1f5f9",
+    colorBg4: "#e2e8f0",
+    colorBgGlass: "rgba(255, 255, 255, 0.8)",
+
+    // Borders
+    borderColor: "rgba(0, 0, 0, 0.08)",
+    borderColor2: "rgba(0, 0, 0, 0.12)",
+    borderColorAccent: "rgba(99, 102, 241, 0.35)",
+
+    // Text
+    colorGrey0: "#0f172a",
+    colorGrey1: "#1e293b",
+    colorGrey2: "#475569",
+    colorGrey3: "#64748b",
+    colorGrey4: "#94a3b8",
+    colorGrey5: "#cbd5e1",
+    colorGrey6: "#e2e8f0",
+
+    colorWhite: "#1e293b",
+    colorFontPrimary: "#0f172a",
+    colorTextSecondary: "#64748b",
+
+    // Accent
+    colorPrimary: "#6366f1",
+    colorPrimaryHover: "#4f46e5",
+    colorPrimaryGlow: "rgba(99, 102, 241, 0.25)",
+    colorPrimaryLight: "rgba(99, 102, 241, 0.12)",
+    colorPrimaryGreen: "#6366f1",
+
+    // Status
+    colorGreenDark: "#16a34a",
+    colorGreenLight: "rgba(22, 163, 74, 0.12)",
+    colorDanger: "#ef4444",
+    colorDangerLight: "rgba(239, 68, 68, 0.12)",
+    colorWarning: "#eab308",
+    colorWarningLight: "rgba(234, 179, 8, 0.12)",
+    colorInfo: "#3b82f6",
+    colorInfoLight: "rgba(59, 130, 246, 0.12)",
+
+    // Task badge colors
+    colorMinor: "rgba(59, 130, 246, 0.15)",
+    colorMinorText: "#2563eb",
+    colorHigh: "rgba(239, 68, 68, 0.15)",
+    colorHighText: "#dc2626",
+    colorLow: "rgba(100, 116, 139, 0.15)",
+    colorLowText: "#475569",
+    colorImportant: "rgba(234, 179, 8, 0.15)",
+    colorImportantText: "#ce8c00",
+
+    // Nav
+    activeNavLink: "rgba(99, 102, 241, 0.1)",
+    activeNavLinkHover: "rgba(0,0,0, 0.04)",
+    colorIcons: "#64748b",
+    colorIcons2: "#6366f1",
+
+    // UI
+    sidebarWidth: "16rem",
+    sidebarCollapsed: "5rem",
+
+    // Shadows
+    shadow7: "0 4px 20px rgba(0, 0, 0, 0.05)",
+    shadowGlow: "0 0 20px rgba(99, 102, 241, 0.15)",
+
+    // Misc
+    colorGreyDark: "#f8fafc",
+    colorButton: "#e2e8f0",
+    gridGap: "1rem",
   },
 ];
 
